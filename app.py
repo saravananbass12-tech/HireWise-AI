@@ -34,26 +34,24 @@ st.divider()
 
 
 # ==================================================
-# 1. LOAD DATASET (FROM GOOGLE DRIVE)
+# 1. LOAD DATASET FROM GOOGLE DRIVE
 # ==================================================
 
+# உங்கள் Google Drive File ID
+GOOGLE_DRIVE_FILE_ID = "13hqb2K-nUTQkKJ_oTiVWkwTXqTcCgdG2"
+
 @st.cache_data
-def load_data():
-    # Google Drive File ID
-    file_id = "13hqb2K-nUTQkKJ_oTiVWkwTXqTcCgdG2"
-    
-    # Direct Download Link
+def load_data(file_id):
+    # Google Drive-ல் இருந்து Direct Download Link
     url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    response = requests.get(url)
     
-    try:
-        response = requests.get(url)
-        response.raise_for_status() # Check for HTTP errors
-        
-        # Read CSV directly from memory
-        csv_data = io.StringIO(response.content.decode('utf-8'))
-        data = pd.read_csv(csv_data)
-    except Exception as e:
-        raise ValueError(f"Failed to download or read dataset from Google Drive. Error: {e}")
+    if response.status_code != 200:
+        raise ValueError("Google Drive-ல் இருந்து Dataset-ஐ download செய்ய முடியவில்லை. File Share setting-ஐ 'Anyone with the link' என மாற்றவும்.")
+
+    # CSV-ஐ படிக்கும் முறை
+    csv_data = io.StringIO(response.content.decode('utf-8'))
+    data = pd.read_csv(csv_data)
 
     # Normalize column names: remove spaces and compare without case sensitivity.
     data.columns = data.columns.astype(str).str.strip()
@@ -132,9 +130,10 @@ def load_data():
     return data
 
 
+# Load Dataset
 try:
-    # Load data using the Google Drive function
-    df = load_data()
+    with st.spinner("Google Drive-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
+        df = load_data(GOOGLE_DRIVE_FILE_ID)
 except Exception as error:
     st.error(f"Dataset loading error: {error}")
     st.stop()
@@ -143,7 +142,7 @@ if df.empty:
     st.error("The dataset is empty. Please check the CSV file.")
     st.stop()
 
-st.success(f"Dataset loaded successfully from Google Drive: {len(df):,} records")
+st.success(f"Dataset loaded successfully: {len(df):,} records")
 
 
 # ==================================================
