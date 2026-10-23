@@ -1,6 +1,7 @@
 import os
-
 import streamlit as st
+import requests
+import io
 import pandas as pd
 import plotly.express as px
 
@@ -33,20 +34,26 @@ st.divider()
 
 
 # ==================================================
-# 1. LOAD DATASET
+# 1. LOAD DATASET (FROM GOOGLE DRIVE)
 # ==================================================
 
-# Find the CSV file in the same folder as app.py.
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(
-    BASE_DIR,
-    "human_job_prediction_50000_records_converted.csv"
-)
-
-
 @st.cache_data
-def load_data(file_path):
-    data = pd.read_csv(file_path)
+def load_data():
+    # Google Drive File ID
+    file_id = "13hqb2K-nUTQkKJ_oTiVWkwTXqTcCgdG2"
+    
+    # Direct Download Link
+    url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status() # Check for HTTP errors
+        
+        # Read CSV directly from memory
+        csv_data = io.StringIO(response.content.decode('utf-8'))
+        data = pd.read_csv(csv_data)
+    except Exception as e:
+        raise ValueError(f"Failed to download or read dataset from Google Drive. Error: {e}")
 
     # Normalize column names: remove spaces and compare without case sensitivity.
     data.columns = data.columns.astype(str).str.strip()
@@ -125,15 +132,9 @@ def load_data(file_path):
     return data
 
 
-if not os.path.isfile(DATA_FILE):
-    st.error(
-        "Dataset file not found. Make sure this CSV is in the same folder "
-        "as app.py: human_job_prediction_50000_records_converted.csv"
-    )
-    st.stop()
-
 try:
-    df = load_data(DATA_FILE)
+    # Load data using the Google Drive function
+    df = load_data()
 except Exception as error:
     st.error(f"Dataset loading error: {error}")
     st.stop()
@@ -142,7 +143,7 @@ if df.empty:
     st.error("The dataset is empty. Please check the CSV file.")
     st.stop()
 
-st.success(f"Dataset loaded successfully: {len(df):,} records")
+st.success(f"Dataset loaded successfully from Google Drive: {len(df):,} records")
 
 
 # ==================================================
