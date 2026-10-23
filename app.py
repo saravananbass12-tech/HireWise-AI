@@ -56,7 +56,7 @@ def load_data(file_id):
             break
 
     if response.status_code != 200:
-        raise ValueError("Google Drive-ல் இருந்து Dataset-ஐ download செய்ய முடியவில்லை. File Share setting-ஐ சரிபார்க்கவும்.")
+        raise ValueError("Google Drive-ல் இருந்து Dataset-ஐ download செய்ய முடியவில்லை.")
 
     # CSV-ஐ படிக்கும் முறை
     content = response.content
