@@ -42,25 +42,35 @@ GOOGLE_DRIVE_FILE_ID = "13hqb2K-nUTQkKJ_oTiVWkwTXqTcCgdG2"
 
 @st.cache_data
 def load_data(file_id):
-    # Google Drive-ல் இருந்து Direct Download Link
+    # Google Drive-ல் இருந்து Direct Download URL
     url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    response = requests.get(url)
     
+    session = requests.Session()
+    response = session.get(url, stream=True)
+    
+    # Google Drive-ன் 'Virus Scan Warning' பக்கத்தைக் கடக்கும் லாஜிக்
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            url = f"https://drive.google.com/uc?export=download&confirm={value}&id={file_id}"
+            response = session.get(url, stream=True)
+            break
+
     if response.status_code != 200:
-        raise ValueError("Google Drive-ல் இருந்து Dataset-ஐ download செய்ய முடியவில்லை. File Share setting-ஐ 'Anyone with the link' என மாற்றவும்.")
+        raise ValueError("Google Drive-ல் இருந்து Dataset-ஐ download செய்ய முடியவில்லை. File Share setting-ஐ சரிபார்க்கவும்.")
 
     # CSV-ஐ படிக்கும் முறை
-    csv_data = io.StringIO(response.content.decode('utf-8'))
+    content = response.content
+    csv_data = io.BytesIO(content)
     data = pd.read_csv(csv_data)
 
-    # Normalize column names: remove spaces and compare without case sensitivity.
+    # Normalize column names
     data.columns = data.columns.astype(str).str.strip()
     normalized = {
         str(column).strip().lower().replace(" ", "_").replace("-", "_"): column
         for column in data.columns
     }
 
-    # Map common alternative column names to the names used by this app.
+    # Map common alternative column names
     aliases = {
         "Education": ["education", "education_level", "qualification"],
         "Experience_Years": ["experience_years", "experience", "years_experience", "work_experience"],
@@ -150,19 +160,12 @@ st.success(f"Dataset loaded successfully: {len(df):,} records")
 # ==================================================
 
 feature_columns = [
-    "Education",
-    "Experience_Years",
-    "Skills_Score",
-    "Applications_Sent",
-    "Coding_Score",
-    "Communication_Score",
-    "Interview_Attended",
+    "Education", "Experience_Years", "Skills_Score", "Applications_Sent",
+    "Coding_Score", "Communication_Score", "Interview_Attended",
 ]
 
 target_columns = [
-    "Job_Search_Status",
-    "Interview_Result",
-    "Application_Status",
+    "Job_Search_Status", "Interview_Result", "Application_Status",
 ]
 
 target_names = {
@@ -174,12 +177,8 @@ target_names = {
 categorical_features = ["Education"]
 
 numeric_features = [
-    "Experience_Years",
-    "Skills_Score",
-    "Applications_Sent",
-    "Coding_Score",
-    "Communication_Score",
-    "Interview_Attended",
+    "Experience_Years", "Skills_Score", "Applications_Sent",
+    "Coding_Score", "Communication_Score", "Interview_Attended",
 ]
 
 
@@ -197,37 +196,27 @@ def train_models(data):
             subset=[target]
         ).copy()
 
-        # Remove rows that do not have a usable label.
         model_data = model_data[
             model_data[target].astype("string").str.strip().ne("")
         ]
 
         if model_data.empty:
-            raise ValueError(
-                f"No valid target values were found for {target}."
-            )
+            raise ValueError(f"No valid target values were found for {target}.")
 
         if model_data[target].nunique() < 2:
-            raise ValueError(
-                f"{target} must contain at least two different classes."
-            )
+            raise ValueError(f"{target} must contain at least two different classes.")
 
         class_counts = model_data[target].value_counts()
         if class_counts.min() < 2:
             raise ValueError(
-                f"Every class in {target} needs at least two records "
-                "for stratified splitting."
+                f"Every class in {target} needs at least two records for stratified splitting."
             )
 
         X = model_data[feature_columns]
         y = model_data[target].astype(str)
 
         X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
-            test_size=0.20,
-            random_state=42,
-            stratify=y,
+            X, y, test_size=0.20, random_state=42, stratify=y,
         )
 
         preprocessor = ColumnTransformer(
@@ -297,18 +286,9 @@ st.header("📊 Model Accuracy & Performance Dashboard")
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("Total Records", f"{len(df):,}")
-col2.metric(
-    "Job Search Accuracy",
-    f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%"
-)
-col3.metric(
-    "Interview Accuracy",
-    f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%"
-)
-col4.metric(
-    "Application Accuracy",
-    f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%"
-)
+col2.metric("Job Search Accuracy", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
+col3.metric("Interview Accuracy", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
+col4.metric("Application Accuracy", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
@@ -339,11 +319,7 @@ fig_cm = px.imshow(
     text_auto=True,
     aspect="auto",
     color_continuous_scale="Blues",
-    labels={
-        "x": "Predicted Result",
-        "y": "Actual Result",
-        "color": "Count",
-    },
+    labels={"x": "Predicted Result", "y": "Actual Result", "color": "Count"},
     title=f"Confusion Matrix - {target_names[selected_task]}",
 )
 
@@ -357,9 +333,7 @@ st.plotly_chart(fig_cm, use_container_width=True)
 st.header("🤖 Candidate Prediction Form")
 st.write("Enter candidate details to predict recruitment outcomes.")
 
-education_options = sorted(
-    df["Education"].dropna().astype(str).unique().tolist()
-)
+education_options = sorted(df["Education"].dropna().astype(str).unique().tolist())
 
 if not education_options:
     st.error("No valid Education values were found in the dataset.")
@@ -370,30 +344,16 @@ with st.form("candidate_form"):
 
     with col1:
         education = st.selectbox("Education", options=education_options)
-        experience = st.number_input(
-            "Experience (Years)", min_value=0, max_value=50, value=1, step=1
-        )
-        skills_score = st.slider(
-            "Skills Score", min_value=0, max_value=100, value=70
-        )
-        applications_sent = st.number_input(
-            "Applications Sent", min_value=0, max_value=1000, value=10
-        )
+        experience = st.number_input("Experience (Years)", min_value=0, max_value=50, value=1, step=1)
+        skills_score = st.slider("Skills Score", min_value=0, max_value=100, value=70)
+        applications_sent = st.number_input("Applications Sent", min_value=0, max_value=1000, value=10)
 
     with col2:
-        coding_score = st.slider(
-            "Coding Score", min_value=0, max_value=100, value=70
-        )
-        communication_score = st.slider(
-            "Communication Score", min_value=0, max_value=100, value=70
-        )
-        interview_attended = st.number_input(
-            "Interviews Attended", min_value=0, max_value=100, value=1
-        )
+        coding_score = st.slider("Coding Score", min_value=0, max_value=100, value=70)
+        communication_score = st.slider("Communication Score", min_value=0, max_value=100, value=70)
+        interview_attended = st.number_input("Interviews Attended", min_value=0, max_value=100, value=1)
 
-    submit = st.form_submit_button(
-        "🔮 Predict Outcomes", use_container_width=True
-    )
+    submit = st.form_submit_button("🔮 Predict Outcomes", use_container_width=True)
 
 
 # ==================================================
