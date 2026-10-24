@@ -39,14 +39,12 @@ try:
     def load_data(url):
         data = pd.read_csv(url)
 
-        # Normalize column names
         data.columns = data.columns.astype(str).str.strip()
         normalized = {
             str(column).strip().lower().replace(" ", "_").replace("-", "_"): column
             for column in data.columns
         }
 
-        # Map common alternative column names
         aliases = {
             "Education": ["education", "education_level", "qualification"],
             "Experience_Years": ["experience_years", "experience", "years_experience", "work_experience"],
@@ -147,7 +145,7 @@ try:
     ]
 
     # ==================================================
-    # 3. TRAIN RANDOM FOREST MODELS (Optimized for Memory)
+    # 3. TRAIN RANDOM FOREST MODELS
     # ==================================================
     @st.cache_resource
     def train_models(data):
@@ -168,9 +166,8 @@ try:
             if class_counts.min() < 2:
                 raise ValueError(f"Every class in {target} needs at least two records.")
 
-            # ⚠️ முக்கிய மாற்றம்: மெமரி பிரச்சனையைத் தவிர்க்க 50,000 வரிகள் மட்டும் எடுக்கிறோம்
-            if len(model_data) > 50000:
-                model_data = model_data.sample(n=50000, random_state=42)
+            if len(model_data) > 70000:
+                model_data = model_data.sample(n=70000, random_state=42)
 
             X = model_data[feature_columns]
             y = model_data[target].astype(str)
@@ -194,7 +191,7 @@ try:
                 steps=[
                     ("preprocessor", preprocessor),
                     ("classifier", RandomForestClassifier(
-                        n_estimators=50,  # வேகமாக வேலை செய்ய 50 மரங்கள்
+                        n_estimators=50, 
                         random_state=42, 
                         class_weight="balanced", 
                         n_jobs=-1,
@@ -212,6 +209,9 @@ try:
                 "y_test": y_test,
                 "predictions": predictions,
                 "classes": model.named_steps["classifier"].classes_,
+                "train_records": len(X_train),
+                "test_records": len(X_test),
+                "total_sampled": len(model_data)
             }
 
         return models, metrics
@@ -220,20 +220,45 @@ try:
         models, model_metrics = train_models(df)
 
     # ==================================================
-    # 4. MODEL ACCURACY DASHBOARD
+    # 4. MODEL ACCURACY DASHBOARD (Mobile Optimized 2x2)
     # ==================================================
-    st.header("📊 Model Accuracy & Performance Dashboard")
+    st.header("📊 Model Accuracy Dashboard")
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Records", f"{len(df):,}")
-    col2.metric("Job Search Accuracy", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
-    col3.metric("Interview Accuracy", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
-    col4.metric("Application Accuracy", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
+    # மொபைலில் 2x2 கட்டங்களாகக் காட்ட:
+    row1_col1, row1_col2 = st.columns(2)
+    row2_col1, row2_col2 = st.columns(2)
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    row1_col1.metric("Total Records", f"{len(df):,}")
+    row1_col2.metric("Job Search Acc.", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
+    row2_col1.metric("Interview Acc.", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
+    row2_col2.metric("Application Acc.", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     # ==================================================
-    # 5. CONFUSION MATRIX
+    # 4.1 TRAINING & TESTING RECORDS
+    # ==================================================
+    st.subheader("📑 Training & Testing Data Distribution")
+    
+    selected_target_for_records = st.selectbox(
+        "Select Model to view Train/Test records:", 
+        options=target_columns,
+        format_func=lambda target: target_names[target],
+        key="train_test_view"
+    )
+
+    rec_col1, rec_col2, rec_col3 = st.columns(3)
+    
+    if selected_target_for_records in model_metrics:
+        selected_record_metrics = model_metrics[selected_target_for_records]
+        rec_col1.metric("Total Sampled", f"{selected_record_metrics['total_sampled']:,}")
+        rec_col2.metric("Training (80%)", f"{selected_record_metrics['train_records']:,}")
+        rec_col3.metric("Testing (20%)", f"{selected_record_metrics['test_records']:,}")
+
+    st.divider()
+
+    # ==================================================
+    # 5. CONFUSION MATRIX (Mobile Fix)
     # ==================================================
     st.header("🎯 Confusion Matrix")
 
@@ -256,6 +281,9 @@ try:
         labels={"x": "Predicted Result", "y": "Actual Result", "color": "Count"},
         title=f"Confusion Matrix - {target_names[selected_task]}",
     )
+    
+    # மொபைலில் கிராப் சிறியதாக இல்லாமல் இருக்க width='stretch' (பழைய use_container_width=True)
+    fig_cm.update_layout(margin=dict(l=20, r=20, t=40, b=20))
     st.plotly_chart(fig_cm, use_container_width=True)
 
     # ==================================================
@@ -270,16 +298,13 @@ try:
         st.stop()
 
     with st.form("candidate_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            education = st.selectbox("Education", options=education_options)
-            experience = st.number_input("Experience (Years)", min_value=0, max_value=50, value=1, step=1)
-            skills_score = st.slider("Skills Score", min_value=0, max_value=100, value=70)
-            applications_sent = st.number_input("Applications Sent", min_value=0, max_value=1000, value=10)
-        with col2:
-            coding_score = st.slider("Coding Score", min_value=0, max_value=100, value=70)
-            communication_score = st.slider("Communication Score", min_value=0, max_value=100, value=70)
-            interview_attended = st.number_input("Interviews Attended", min_value=0, max_value=100, value=1)
+        education = st.selectbox("Education", options=education_options)
+        experience = st.number_input("Experience (Years)", min_value=0, max_value=50, value=1, step=1)
+        skills_score = st.slider("Skills Score", min_value=0, max_value=100, value=70)
+        applications_sent = st.number_input("Applications Sent", min_value=0, max_value=1000, value=10)
+        coding_score = st.slider("Coding Score", min_value=0, max_value=100, value=70)
+        communication_score = st.slider("Communication Score", min_value=0, max_value=100, value=70)
+        interview_attended = st.number_input("Interviews Attended", min_value=0, max_value=100, value=1)
 
         submit = st.form_submit_button("🔮 Predict Outcomes", use_container_width=True)
 
@@ -299,33 +324,32 @@ try:
 
         st.divider()
         st.header("✅ Prediction Results")
-        result_columns = st.columns(3)
-
-        for index, target in enumerate(target_columns):
+        
+        # மொபைலில் முடிவுகளை ஒன்றின் கீழ் ஒன்றாகக் காட்ட
+        for target in target_columns:
             model = models[target]
             prediction = model.predict(candidate)[0]
             probabilities = model.predict_proba(candidate)[0]
             confidence = float(probabilities.max() * 100)
 
-            with result_columns[index]:
+            with st.container():
                 st.subheader(target_names[target])
-                st.success(f"Predicted Result: {prediction}")
-                st.metric("Prediction Confidence", f"{confidence:.2f}%")
-
-        st.subheader("Candidate Input Details")
-        st.dataframe(candidate, use_container_width=True)
+                st.success(f"Predicted Result: **{prediction}**")
+                st.metric("Confidence", f"{confidence:.2f}%")
+                st.write("---")
 
     # ==================================================
     # 8. DATASET PREVIEW & INFO
     # ==================================================
     st.divider()
-    with st.expander("📁 View Dataset"):
+    with st.expander("📁 View Dataset (Top 20 Rows)"):
         st.dataframe(df.head(20), use_container_width=True)
         
     with st.expander("ℹ️ About HireWise AI"):
         st.write("""
         **Project Name:** HireWise AI
         **Algorithm:** Random Forest Classification
+        **Note:** Model is trained on a 70,000 sample subset for performance optimization.
         """)
 
 except Exception as e:
