@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -35,13 +34,11 @@ st.divider()
 # 1. LOAD DATASET FROM HUGGING FACE
 # ==================================================
 
-# Hugging Face Direct Download Link
 HF_CSV_URL = "https://huggingface.co/datasets/saroa/hirewise-dataset/resolve/main/human_job_prediction_50000_records_converted.csv"
 
 @st.cache_data
 def load_data(url):
     try:
-        # Pandas-ஐ பயன்படுத்தி நேரடியாக URL-ல் இருந்து CSV-ஐ படிக்கிறது
         data = pd.read_csv(url)
     except Exception as e:
         st.error(f"Dataset Load Error: {e}")
@@ -55,7 +52,6 @@ def load_data(url):
         for column in data.columns
     }
 
-    # Map common alternative column names
     aliases = {
         "Education": ["education", "education_level", "qualification"],
         "Experience_Years": ["experience_years", "experience", "years_experience", "work_experience"],
@@ -100,7 +96,6 @@ def load_data(url):
             + ". Available CSV columns are: " + available_columns
         )
 
-    # Standardize common output labels.
     data["Application_Status"] = (
         data["Application_Status"].astype("string").str.strip().replace({
             "Selected": "Approved", "selected": "Approved", "Approved": "Approved",
@@ -124,7 +119,6 @@ def load_data(url):
     return data
 
 
-# Load Dataset
 with st.spinner("Hugging Face-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
     df = load_data(HF_CSV_URL)
 
