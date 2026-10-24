@@ -220,7 +220,7 @@ try:
         models, model_metrics = train_models(df)
 
     # ==================================================
-    # 4. MODEL ACCURACY DASHBOARD (Mobile Optimized 2x2)
+    # 4. MODEL ACCURACY DASHBOARD (Mobile 2x2)
     # ==================================================
     st.header("📊 Model Accuracy Dashboard")
 
@@ -238,10 +238,10 @@ try:
     # ==================================================
     # 4.1 TRAINING & TESTING RECORDS
     # ==================================================
-    st.subheader("📑 Training & Testing Data Distribution")
+    st.subheader("📑 Training & Testing Data")
     
     selected_target_for_records = st.selectbox(
-        "Select Model to view Train/Test records:", 
+        "Select Model:", 
         options=target_columns,
         format_func=lambda target: target_names[target],
         key="train_test_view"
@@ -258,7 +258,7 @@ try:
     st.divider()
 
     # ==================================================
-    # 5. CONFUSION MATRIX (Mobile Fix)
+    # 5. CONFUSION MATRIX (Mobile Optimized)
     # ==================================================
     st.header("🎯 Confusion Matrix")
 
@@ -279,11 +279,13 @@ try:
         cm, x=classes, y=classes, text_auto=True, aspect="auto",
         color_continuous_scale="Blues",
         labels={"x": "Predicted Result", "y": "Actual Result", "color": "Count"},
-        title=f"Confusion Matrix - {target_names[selected_task]}",
     )
-    
-    # மொபைலில் கிராப் சிறியதாக இல்லாமல் இருக்க width='stretch' (பழைய use_container_width=True)
-    fig_cm.update_layout(margin=dict(l=20, r=20, t=40, b=20))
+    # மொபைலில் கிராப் தெளிவாகத் தெரிய Margin-களைக் குறைத்துள்ளேன்
+    fig_cm.update_layout(
+        margin=dict(l=10, r=10, t=30, b=10),
+        xaxis_title="Predicted Result",
+        yaxis_title="Actual Result",
+    )
     st.plotly_chart(fig_cm, use_container_width=True)
 
     # ==================================================
