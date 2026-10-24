@@ -34,34 +34,21 @@ st.divider()
 
 
 # ==================================================
-# 1. LOAD DATASET FROM GOOGLE DRIVE
+# 1. LOAD DATASET FROM HUGGING FACE
 # ==================================================
 
-# உங்கள் Google Drive File ID
-GOOGLE_DRIVE_FILE_ID = "13hqb2K-nUTQkKJ_oTiVWkwTXqTcCgdG2"
+# Hugging Face Dataset Link
+HF_CSV_URL = "https://huggingface.co/datasets/saroa/hirewise-dataset/resolve/main/human_job_prediction_50000_records_converted.csv"
 
 @st.cache_data
-def load_data(file_id):
-    # Google Drive-ல் இருந்து Direct Download URL
-    url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    
-    session = requests.Session()
-    response = session.get(url, stream=True)
-    
-    # Google Drive-ன் 'Virus Scan Warning' பக்கத்தைக் கடக்கும் லாஜிக்
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            url = f"https://drive.google.com/uc?export=download&confirm={value}&id={file_id}"
-            response = session.get(url, stream=True)
-            break
-
-    if response.status_code != 200:
-        raise ValueError("Google Drive-ல் இருந்து Dataset-ஐ download செய்ய முடியவில்லை.")
-
-    # CSV-ஐ படிக்கும் முறை
-    content = response.content
-    csv_data = io.BytesIO(content)
-    data = pd.read_csv(csv_data)
+def load_data(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = io.StringIO(response.content.decode('utf-8'))
+        data = pd.read_csv(csv_data)
+    except Exception as e:
+        raise ValueError(f"Hugging Face-ல் இருந்து Dataset-ஐ download செய்ய முடியவில்லை. Link சரிபார்க்கவும். Error: {e}")
 
     # Normalize column names
     data.columns = data.columns.astype(str).str.strip()
@@ -142,8 +129,8 @@ def load_data(file_id):
 
 # Load Dataset
 try:
-    with st.spinner("Google Drive-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
-        df = load_data(GOOGLE_DRIVE_FILE_ID)
+    with st.spinner("Hugging Face-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
+        df = load_data(HF_CSV_URL)
 except Exception as error:
     st.error(f"Dataset loading error: {error}")
     st.stop()
