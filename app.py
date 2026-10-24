@@ -37,7 +37,7 @@ st.divider()
 # 1. LOAD DATASET FROM HUGGING FACE
 # ==================================================
 
-# Hugging Face Dataset Link
+# Hugging Face Direct Download Link
 HF_CSV_URL = "https://huggingface.co/datasets/saroa/hirewise-dataset/resolve/main/human_job_prediction_50000_records_converted.csv"
 
 @st.cache_data
@@ -48,7 +48,7 @@ def load_data(url):
         csv_data = io.StringIO(response.content.decode('utf-8'))
         data = pd.read_csv(csv_data)
     except Exception as e:
-        raise ValueError(f"Hugging Face-ல் இருந்து Dataset-ஐ download செய்ய முடியவில்லை. Link சரிபார்க்கவும். Error: {e}")
+        raise ValueError(f"Dataset-ஐ download செய்ய முடியவில்லை. Hugging Face Link-ஐ சரிபார்க்கவும். Error: {e}")
 
     # Normalize column names
     data.columns = data.columns.astype(str).str.strip()
