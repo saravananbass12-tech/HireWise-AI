@@ -220,18 +220,18 @@ try:
         models, model_metrics = train_models(df)
 
     # ==================================================
-    # 4. MODEL ACCURACY DASHBOARD (Mobile 2x2)
+    # 4. MODEL ACCURACY DASHBOARD
     # ==================================================
     st.header("📊 Model Accuracy Dashboard")
 
-    # மொபைலில் 2x2 கட்டங்களாகக் காட்ட:
-    row1_col1, row1_col2 = st.columns(2)
-    row2_col1, row2_col2 = st.columns(2)
-
-    row1_col1.metric("Total Records", f"{len(df):,}")
-    row1_col2.metric("Job Search Acc.", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
-    row2_col1.metric("Interview Acc.", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
-    row2_col2.metric("Application Acc.", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
+    # மொபைலில் 2x2, டெஸ்க்டாப்பில் 1x4 ஆக மாறும் வகையில் `st.columns` (gap="small") பயன்படுத்தப்பட்டுள்ளது
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total Records", f"{len(df):,}")
+        st.metric("Interview Acc.", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
+    with col2:
+        st.metric("Job Search Acc.", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
+        st.metric("Application Acc.", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -258,7 +258,7 @@ try:
     st.divider()
 
     # ==================================================
-    # 5. CONFUSION MATRIX (Mobile Optimized)
+    # 5. CONFUSION MATRIX
     # ==================================================
     st.header("🎯 Confusion Matrix")
 
@@ -280,13 +280,15 @@ try:
         color_continuous_scale="Blues",
         labels={"x": "Predicted Result", "y": "Actual Result", "color": "Count"},
     )
-    # மொபைலில் கிராப் தெளிவாகத் தெரிய Margin-களைக் குறைத்துள்ளேன்
+    
+    # மொபைலில் கிராப் தெளிவாகத் தெரியவும், மேல் வலது மெனுக்கள் (modebar) சரியாக வேலை செய்யவும்
     fig_cm.update_layout(
-        margin=dict(l=10, r=10, t=30, b=10),
+        margin=dict(l=0, r=0, t=30, b=0),
         xaxis_title="Predicted Result",
         yaxis_title="Actual Result",
+        coloraxis_colorbar=dict(title="Count", thickness=15),
     )
-    st.plotly_chart(fig_cm, use_container_width=True)
+    st.plotly_chart(fig_cm, use_container_width=True, config={'displayModeBar': False}) # மெனுக்களை மறைத்தல்
 
     # ==================================================
     # 6. CANDIDATE PREDICTION FORM
@@ -327,7 +329,7 @@ try:
         st.divider()
         st.header("✅ Prediction Results")
         
-        # மொபைலில் முடிவுகளை ஒன்றின் கீழ் ஒன்றாகக் காட்ட
+        # முடிவுகளை மொபைலில் ஒன்றின் கீழ் ஒன்றாகக் காட்ட
         for target in target_columns:
             model = models[target]
             prediction = model.predict(candidate)[0]
