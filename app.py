@@ -168,7 +168,7 @@ try:
             if class_counts.min() < 2:
                 raise ValueError(f"Every class in {target} needs at least two records.")
 
-            # ⚠️ முக்கிய மாற்றம்: மெமரி பிரச்சனையைத் தவிர்க்க 70,000 வரிகள் மட்டும் எடுக்கிறோம்
+            # ⚠️ முக்கிய மாற்றம்: 70,000 வரிகள் மட்டும் எடுக்கிறோம்
             if len(model_data) > 70000:
                 model_data = model_data.sample(n=70000, random_state=42)
 
@@ -194,7 +194,7 @@ try:
                 steps=[
                     ("preprocessor", preprocessor),
                     ("classifier", RandomForestClassifier(
-                        n_estimators=50,  # வேகமாக வேலை செய்ய 50 மரங்கள்
+                        n_estimators=50, 
                         random_state=42, 
                         class_weight="balanced", 
                         n_jobs=-1,
@@ -212,6 +212,10 @@ try:
                 "y_test": y_test,
                 "predictions": predictions,
                 "classes": model.named_steps["classifier"].classes_,
+                # புதிதாக சேர்க்கப்பட்டவை:
+                "train_records": len(X_train),
+                "test_records": len(X_test),
+                "total_sampled": len(model_data)
             }
 
         return models, metrics
@@ -225,12 +229,36 @@ try:
     st.header("📊 Model Accuracy & Performance Dashboard")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Records", f"{len(df):,}")
+    col1.metric("Total Original Records", f"{len(df):,}")
     col2.metric("Job Search Accuracy", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
     col3.metric("Interview Accuracy", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
     col4.metric("Application Accuracy", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ==================================================
+    # 4.1 TRAINING & TESTING RECORDS (புதிய பகுதி)
+    # ==================================================
+    st.subheader("📑 Training & Testing Data Distribution")
+    st.write("மெமரி பிரச்சனையைத் தவிர்க்க, தரவுத்தொகுப்பிலிருந்து ஒரு பகுதி மட்டும் பயிற்சிக்கு எடுக்கப்படுகிறது.")
+
+    # எந்த டார்கெட் மாடலுக்கான தகவலைக் காட்ட வேண்டும் என்பதைத் தேர்ந்தெடுக்க
+    selected_target_for_records = st.selectbox(
+        "Select Model to view Train/Test records:", 
+        options=target_columns,
+        format_func=lambda target: target_names[target],
+        key="train_test_view"
+    )
+
+    rec_col1, rec_col2, rec_col3 = st.columns(3)
+    
+    if selected_target_for_records in model_metrics:
+        selected_record_metrics = model_metrics[selected_target_for_records]
+        rec_col1.metric("Total Sampled Records", f"{selected_record_metrics['total_sampled']:,}")
+        rec_col2.metric("Training Records (80%)", f"{selected_record_metrics['train_records']:,}")
+        rec_col3.metric("Testing Records (20%)", f"{selected_record_metrics['test_records']:,}")
+
+    st.divider()
 
     # ==================================================
     # 5. CONFUSION MATRIX
@@ -319,13 +347,14 @@ try:
     # 8. DATASET PREVIEW & INFO
     # ==================================================
     st.divider()
-    with st.expander("📁 View Dataset"):
+    with st.expander("📁 View Dataset (Top 20 Rows)"):
         st.dataframe(df.head(20), use_container_width=True)
         
     with st.expander("ℹ️ About HireWise AI"):
         st.write("""
         **Project Name:** HireWise AI
         **Algorithm:** Random Forest Classification
+        **Note:** Model is trained on a 70,000 sample subset for performance optimization.
         """)
 
 except Exception as e:
