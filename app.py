@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -40,10 +41,9 @@ HF_CSV_URL = "https://huggingface.co/datasets/saroa/hirewise-dataset/resolve/mai
 @st.cache_data
 def load_data(url):
     try:
-        # Pandas-ஐ பயன்படுத்தி நேரடியாக URL-ல் இருந்து CSV-ஐ படிக்கிறது (மிகவும் நம்பகமானது)
+        # Pandas-ஐ பயன்படுத்தி நேரடியாக URL-ல் இருந்து CSV-ஐ படிக்கிறது
         data = pd.read_csv(url)
     except Exception as e:
-        # Error வந்தால் முழு விவரத்தையும் காட்டும்
         st.error(f"Dataset Load Error: {e}")
         st.code(traceback.format_exc())
         st.stop()
