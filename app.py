@@ -1,9 +1,7 @@
-import os
 import streamlit as st
-import requests
-import io
 import pandas as pd
 import plotly.express as px
+import traceback
 
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
@@ -12,7 +10,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
-
 
 # ==================================================
 # HIREWISE AI - JOB PREDICTION SYSTEM
@@ -43,12 +40,13 @@ HF_CSV_URL = "https://huggingface.co/datasets/saroa/hirewise-dataset/resolve/mai
 @st.cache_data
 def load_data(url):
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        csv_data = io.StringIO(response.content.decode('utf-8'))
-        data = pd.read_csv(csv_data)
+        # Pandas-ஐ பயன்படுத்தி நேரடியாக URL-ல் இருந்து CSV-ஐ படிக்கிறது (மிகவும் நம்பகமானது)
+        data = pd.read_csv(url)
     except Exception as e:
-        raise ValueError(f"Dataset-ஐ download செய்ய முடியவில்லை. Hugging Face Link-ஐ சரிபார்க்கவும். Error: {e}")
+        # Error வந்தால் முழு விவரத்தையும் காட்டும்
+        st.error(f"Dataset Load Error: {e}")
+        st.code(traceback.format_exc())
+        st.stop()
 
     # Normalize column names
     data.columns = data.columns.astype(str).str.strip()
@@ -100,7 +98,6 @@ def load_data(url):
         raise ValueError(
             "Some required columns could not be matched: " + ", ".join(missing_columns)
             + ". Available CSV columns are: " + available_columns
-            + ". Please check the CSV column names."
         )
 
     # Standardize common output labels.
@@ -128,12 +125,8 @@ def load_data(url):
 
 
 # Load Dataset
-try:
-    with st.spinner("Hugging Face-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
-        df = load_data(HF_CSV_URL)
-except Exception as error:
-    st.error(f"Dataset loading error: {error}")
-    st.stop()
+with st.spinner("Hugging Face-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
+    df = load_data(HF_CSV_URL)
 
 if df.empty:
     st.error("The dataset is empty. Please check the CSV file.")
@@ -261,6 +254,7 @@ try:
         models, model_metrics = train_models(df)
 except Exception as error:
     st.error(f"Model Training Error: {error}")
+    st.code(traceback.format_exc())
     st.stop()
 
 
@@ -400,28 +394,9 @@ with st.expander("📁 View Dataset"):
 with st.expander("ℹ️ About HireWise AI"):
     st.write("""
     **Project Name:** HireWise AI
-
     **Algorithm:** Random Forest Classification
-
     **Programming Language:** Python
-
     **Libraries:** Streamlit, Pandas, Scikit-learn, Plotly
-
-    **Input Features:**
-    - Education
-    - Experience Years
-    - Skills Score
-    - Applications Sent
-    - Coding Score
-    - Communication Score
-    - Interviews Attended
-
-    **Output Predictions:**
-    - Job Search Status
-    - Interview Result
-    - Application Status
-
-    **Dataset:** Human job prediction dataset.
     """)
 
 st.divider()
