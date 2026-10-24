@@ -1,15 +1,19 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import traceback
-
-from sklearn.model_selection import train_test_split
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix
+try:
+    import streamlit as st
+    import pandas as pd
+    import plotly.express as px
+    import traceback
+    from sklearn.model_selection import train_test_split
+    from sklearn.compose import ColumnTransformer
+    from sklearn.preprocessing import OneHotEncoder
+    from sklearn.pipeline import Pipeline
+    from sklearn.impute import SimpleImputer
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import accuracy_score, confusion_matrix
+except Exception as import_error:
+    import streamlit as st
+    st.error(f"Import Error: {import_error}")
+    st.stop()
 
 # ==================================================
 # HIREWISE AI - JOB PREDICTION SYSTEM
