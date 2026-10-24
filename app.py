@@ -147,7 +147,7 @@ try:
     ]
 
     # ==================================================
-    # 3. TRAIN RANDOM FOREST MODELS
+    # 3. TRAIN RANDOM FOREST MODELS (Optimized for Memory)
     # ==================================================
     @st.cache_resource
     def train_models(data):
@@ -167,6 +167,10 @@ try:
             class_counts = model_data[target].value_counts()
             if class_counts.min() < 2:
                 raise ValueError(f"Every class in {target} needs at least two records.")
+
+            # ⚠️ முக்கிய மாற்றம்: மெமரி பிரச்சனையைத் தவிர்க்க 50,000 வரிகள் மட்டும் எடுக்கிறோம்
+            if len(model_data) > 50000:
+                model_data = model_data.sample(n=50000, random_state=42)
 
             X = model_data[feature_columns]
             y = model_data[target].astype(str)
@@ -190,7 +194,10 @@ try:
                 steps=[
                     ("preprocessor", preprocessor),
                     ("classifier", RandomForestClassifier(
-                        n_estimators=100, random_state=42, class_weight="balanced", n_jobs=-1,
+                        n_estimators=50,  # வேகமாக வேலை செய்ய 50 மரங்கள்
+                        random_state=42, 
+                        class_weight="balanced", 
+                        n_jobs=-1,
                     )),
                 ]
             )
