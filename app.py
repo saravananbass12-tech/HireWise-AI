@@ -39,6 +39,7 @@ HF_CSV_URL = "https://huggingface.co/datasets/saroa/hirewise-dataset/resolve/mai
 @st.cache_data
 def load_data(url):
     try:
+        # Pandas-ஐ பயன்படுத்தி நேரடியாக URL-ல் இருந்து CSV-ஐ படிக்கிறது
         data = pd.read_csv(url)
     except Exception as e:
         st.error(f"Dataset Load Error: {e}")
@@ -52,6 +53,7 @@ def load_data(url):
         for column in data.columns
     }
 
+    # Map common alternative column names
     aliases = {
         "Education": ["education", "education_level", "qualification"],
         "Experience_Years": ["experience_years", "experience", "years_experience", "work_experience"],
@@ -119,8 +121,14 @@ def load_data(url):
     return data
 
 
-with st.spinner("Hugging Face-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
-    df = load_data(HF_CSV_URL)
+# Load Dataset with Try-Except
+try:
+    with st.spinner("Hugging Face-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
+        df = load_data(HF_CSV_URL)
+except Exception as main_error:
+    st.error(f"Main Error: {main_error}")
+    st.code(traceback.format_exc())
+    st.stop()
 
 if df.empty:
     st.error("The dataset is empty. Please check the CSV file.")
