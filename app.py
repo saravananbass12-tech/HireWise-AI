@@ -356,7 +356,7 @@ try:
         
     with st.expander("ℹ️ About HireWise AI"):
         st.write("""
-        **Project Name:** HireWise AI
+        **Project Name : HireWise AI**
         
         **Algorithm:** Random Forest Classification
         
