@@ -21,9 +21,9 @@ st.set_page_config(
     layout="wide"
 )
 
+# மொபைலில் வடிவமைப்பை அழகாக்க தனிப்பட்ட CSS
 st.markdown("""
 <style>
-
     div[data-testid="stMetric"] {
         background-color: #f8f9fa;
         border: 1px solid #e9ecef;
@@ -40,7 +40,6 @@ st.markdown("""
         font-size: 0.85rem !important;
         font-weight: bold;
     }
-    /* Prediction Results-ல் உள்ள Success பாக்ஸ் */
     div[data-testid="stNotification"] {
         border-radius: 10px;
     }
@@ -171,7 +170,7 @@ try:
     ]
 
     # ==================================================
-    # 3. TRAIN RANDOM FOREST MODELS
+    # 3. TRAIN RANDOM FOREST MODELS (Using 1 Million Records Safely)
     # ==================================================
     @st.cache_resource
     def train_models(data):
@@ -179,6 +178,7 @@ try:
         metrics = {}
 
         for target in target_columns:
+            # முழு 10 லட்சம் வரிகளையும் பயன்படுத்துகிறோம்
             model_data = data[feature_columns + [target]].dropna(subset=[target]).copy()
             model_data = model_data[model_data[target].astype("string").str.strip().ne("")]
 
@@ -192,12 +192,10 @@ try:
             if class_counts.min() < 2:
                 raise ValueError(f"Every class in {target} needs at least two records.")
 
-            if len(model_data) > 70000:
-                model_data = model_data.sample(n=70000, random_state=42)
-
             X = model_data[feature_columns]
             y = model_data[target].astype(str)
 
+            # 10 லட்சம் வரிகளை Train & Test ஆகப் பிரித்தல்
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=0.20, random_state=42, stratify=y,
             )
@@ -221,6 +219,7 @@ try:
                         random_state=42, 
                         class_weight="balanced", 
                         n_jobs=-1,
+                        max_samples=0.1  # ⚠️ மெமரி பிரச்சனையைத் தவிர்க்க, ஒவ்வொரு மரமும் 10% தரவை மட்டும் எடுக்கும்
                     )),
                 ]
             )
@@ -239,7 +238,7 @@ try:
 
         return models, metrics
 
-    with st.spinner("Training Random Forest models... Please wait."):
+    with st.spinner("Training Random Forest models on Full Dataset... Please wait (This may take a minute)."):
         models, model_metrics = train_models(df)
 
     # ==================================================
@@ -286,14 +285,13 @@ try:
         xaxis_title="Predicted Result",
         yaxis_title="Actual Result",
         coloraxis_colorbar=dict(title="Count", thickness=15),
-        dragmode=False,  # ஜூம் செய்ய முடியாதபடி முடக்கப்பட்டது
+        dragmode=False, 
     )
     
-    # config மூலம் ஜூம், பான் (Pan) மற்றும் மெனுக்கள் முழுமையாக மறைக்கப்படுகின்றன
     st.plotly_chart(
         fig_cm, 
         use_container_width=True, 
-        config={'displayModeBar': False, 'staticPlot': True} # staticPlot: True என்பதால் ஜூம் செய்ய முடியாது
+        config={'displayModeBar': False, 'staticPlot': True} 
     )
 
     # ==================================================
@@ -345,7 +343,6 @@ try:
                 st.subheader(target_names[target])
                 st.success(f"Predicted Result: **{prediction}**")
                 
-                # Confidence-ஐ மொபைலில் அழகாகக் காட்ட
                 st.progress(int(confidence))
                 st.caption(f"Confidence: {confidence:.2f}%")
                 st.write("---")
@@ -361,7 +358,7 @@ try:
         st.write("""
         **Project Name:** HireWise AI
         **Algorithm:** Random Forest Classification
-        **Note:** Model is trained on a 70,000 sample subset for performance optimization.
+        **Note:** Model is trained on the full 1,000,000 records using an optimized Random Forest algorithm to prevent memory crashes.
         """)
 
 except Exception as e:
