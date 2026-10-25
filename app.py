@@ -21,6 +21,33 @@ st.set_page_config(
     layout="wide"
 )
 
+# மொபைலில் வடிவமைப்பை அழகாக்க தனிப்பட்ட CSS
+st.markdown("""
+<style>
+    /* மெட்ரிக் கார்டுகளை மொபைலில் 2x2 ஆகக் காட்ட */
+    div[data-testid="stMetric"] {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    div[data-testid="stMetricValue"] {
+        font-size: 1.5rem !important;
+        color: #1f77b4;
+    }
+    div[data-testid="stMetricLabel"] {
+        font-size: 0.9rem !important;
+        font-weight: bold;
+    }
+    /* Prediction Results-ல் உள்ள Success பாக்ஸ் */
+    div[data-testid="stNotification"] {
+        border-radius: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("💼 HireWise AI")
 st.subheader("Human Job Search and Recruitment Outcome Prediction")
 st.write(
@@ -220,18 +247,18 @@ try:
         models, model_metrics = train_models(df)
 
     # ==================================================
-    # 4. MODEL ACCURACY DASHBOARD
+    # 4. MODEL ACCURACY DASHBOARD (Mobile 2x2 via Columns)
     # ==================================================
     st.header("📊 Model Accuracy Dashboard")
 
-    # மொபைலில் 2x2, டெஸ்க்டாப்பில் 1x4 ஆக மாறும் வகையில் `st.columns` (gap="small") பயன்படுத்தப்பட்டுள்ளது
+    # CSS மூலம் மொபைலில் 2x2 ஆக மாற்றப்படுகிறது
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Total Records", f"{len(df):,}")
-        st.metric("Interview Acc.", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
+        st.metric("Interview Accuracy", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
     with col2:
-        st.metric("Job Search Acc.", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
-        st.metric("Application Acc.", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
+        st.metric("Job Search Accuracy", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
+        st.metric("Application Accuracy", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -281,14 +308,13 @@ try:
         labels={"x": "Predicted Result", "y": "Actual Result", "color": "Count"},
     )
     
-    # மொபைலில் கிராப் தெளிவாகத் தெரியவும், மேல் வலது மெனுக்கள் (modebar) சரியாக வேலை செய்யவும்
     fig_cm.update_layout(
         margin=dict(l=0, r=0, t=30, b=0),
         xaxis_title="Predicted Result",
         yaxis_title="Actual Result",
         coloraxis_colorbar=dict(title="Count", thickness=15),
     )
-    st.plotly_chart(fig_cm, use_container_width=True, config={'displayModeBar': False}) # மெனுக்களை மறைத்தல்
+    st.plotly_chart(fig_cm, use_container_width=True, config={'displayModeBar': False})
 
     # ==================================================
     # 6. CANDIDATE PREDICTION FORM
@@ -329,7 +355,6 @@ try:
         st.divider()
         st.header("✅ Prediction Results")
         
-        # முடிவுகளை மொபைலில் ஒன்றின் கீழ் ஒன்றாகக் காட்ட
         for target in target_columns:
             model = models[target]
             prediction = model.predict(candidate)[0]
@@ -339,7 +364,10 @@ try:
             with st.container():
                 st.subheader(target_names[target])
                 st.success(f"Predicted Result: **{prediction}**")
-                st.metric("Confidence", f"{confidence:.2f}%")
+                
+                # Confidence-ஐ மொபைலில் அழகாகக் காட்ட
+                st.progress(int(confidence))
+                st.caption(f"Confidence: {confidence:.2f}%")
                 st.write("---")
 
     # ==================================================
