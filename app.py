@@ -357,7 +357,7 @@ try:
     with st.expander("ℹ️ About HireWise AI"):
         st.write("""
         **Project Name:** HireWise AI
-        ** Algorithm:** Random Forest Classification
+        ** Algorithm: ** Random Forest Classification
         **Note:** Model is trained on the full dataset records using an optimized algorithm to prevent memory crashes.
         **Author: SARAVANAN.D**
         """)
