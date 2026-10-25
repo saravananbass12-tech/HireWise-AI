@@ -170,7 +170,7 @@ try:
     ]
 
     # ==================================================
-    # 3. TRAIN RANDOM FOREST MODELS (Using 1 Million Records Safely)
+    # 3. TRAIN RANDOM FOREST MODELS (Using Full Data safely)
     # ==================================================
     @st.cache_resource
     def train_models(data):
@@ -178,7 +178,7 @@ try:
         metrics = {}
 
         for target in target_columns:
-            # முழு 10 லட்சம் வரிகளையும் பயன்படுத்துகிறோம்
+            # Dataset-ல் உள்ள முழு வரிகளையும் (100%) எடுக்கிறோம்
             model_data = data[feature_columns + [target]].dropna(subset=[target]).copy()
             model_data = model_data[model_data[target].astype("string").str.strip().ne("")]
 
@@ -195,7 +195,7 @@ try:
             X = model_data[feature_columns]
             y = model_data[target].astype(str)
 
-            # 10 லட்சம் வரிகளை Train & Test ஆகப் பிரித்தல்
+            # 80% Training, 20% Testing
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=0.20, random_state=42, stratify=y,
             )
@@ -219,7 +219,7 @@ try:
                         random_state=42, 
                         class_weight="balanced", 
                         n_jobs=-1,
-                        max_samples=0.1  # ⚠️ மெமரி பிரச்சனையைத் தவிர்க்க, ஒவ்வொரு மரமும் 10% தரவை மட்டும் எடுக்கும்
+                        max_samples=0.1  # ⚠️ மெமரி க்ராஷ் ஆகாமல் இருக்க, ஒவ்வொரு மரமும் 10% தரவை மட்டும் எடுக்கும்
                     )),
                 ]
             )
@@ -238,7 +238,7 @@ try:
 
         return models, metrics
 
-    with st.spinner("Training Random Forest models on Full Dataset... Please wait (This may take a minute)."):
+    with st.spinner("Training Random Forest models... Please wait (This may take a minute)."):
         models, model_metrics = train_models(df)
 
     # ==================================================
@@ -358,7 +358,7 @@ try:
         st.write("""
         **Project Name:** HireWise AI
         **Algorithm:** Random Forest Classification
-        **Note:** Model is trained on the full 1,000,000 records using an optimized Random Forest algorithm to prevent memory crashes.
+        **Note:** Model is trained on the full dataset records using an optimized algorithm to prevent memory crashes.
         """)
 
 except Exception as e:
