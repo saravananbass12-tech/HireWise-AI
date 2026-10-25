@@ -359,8 +359,7 @@ try:
         **Project Name:** HireWise AI
         **Algorithm:** Random Forest Classification
         **Note:** Model is trained on the full dataset records using an optimized algorithm to prevent memory crashes.
-        **Author: SARAVANAN.D**
-        """)
+        **Author:SARAVANAN.D**""")
 
 except Exception as e:
     st.error("An error occurred while running the app. Please check the details below:")
