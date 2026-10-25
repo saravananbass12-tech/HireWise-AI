@@ -21,10 +21,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# மொபைலில் வடிவமைப்பை அழகாக்க தனிப்பட்ட CSS
 st.markdown("""
 <style>
-    /* மெட்ரிக் கார்டுகளை மொபைலில் 2x2 ஆகக் காட்ட */
+
     div[data-testid="stMetric"] {
         background-color: #f8f9fa;
         border: 1px solid #e9ecef;
@@ -34,11 +33,11 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     div[data-testid="stMetricValue"] {
-        font-size: 1.5rem !important;
+        font-size: 1.4rem !important;
         color: #1f77b4;
     }
     div[data-testid="stMetricLabel"] {
-        font-size: 0.9rem !important;
+        font-size: 0.85rem !important;
         font-weight: bold;
     }
     /* Prediction Results-ல் உள்ள Success பாக்ஸ் */
@@ -236,9 +235,6 @@ try:
                 "y_test": y_test,
                 "predictions": predictions,
                 "classes": model.named_steps["classifier"].classes_,
-                "train_records": len(X_train),
-                "test_records": len(X_test),
-                "total_sampled": len(model_data)
             }
 
         return models, metrics
@@ -247,11 +243,10 @@ try:
         models, model_metrics = train_models(df)
 
     # ==================================================
-    # 4. MODEL ACCURACY DASHBOARD (Mobile 2x2 via Columns)
+    # 4. MODEL ACCURACY DASHBOARD
     # ==================================================
     st.header("📊 Model Accuracy Dashboard")
 
-    # CSS மூலம் மொபைலில் 2x2 ஆக மாற்றப்படுகிறது
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Total Records", f"{len(df):,}")
@@ -260,32 +255,10 @@ try:
         st.metric("Job Search Accuracy", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
         st.metric("Application Accuracy", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ==================================================
-    # 4.1 TRAINING & TESTING RECORDS
-    # ==================================================
-    st.subheader("📑 Training & Testing Data")
-    
-    selected_target_for_records = st.selectbox(
-        "Select Model:", 
-        options=target_columns,
-        format_func=lambda target: target_names[target],
-        key="train_test_view"
-    )
-
-    rec_col1, rec_col2, rec_col3 = st.columns(3)
-    
-    if selected_target_for_records in model_metrics:
-        selected_record_metrics = model_metrics[selected_target_for_records]
-        rec_col1.metric("Total Sampled", f"{selected_record_metrics['total_sampled']:,}")
-        rec_col2.metric("Training (80%)", f"{selected_record_metrics['train_records']:,}")
-        rec_col3.metric("Testing (20%)", f"{selected_record_metrics['test_records']:,}")
-
     st.divider()
 
     # ==================================================
-    # 5. CONFUSION MATRIX
+    # 5. CONFUSION MATRIX (Static View)
     # ==================================================
     st.header("🎯 Confusion Matrix")
 
@@ -313,8 +286,15 @@ try:
         xaxis_title="Predicted Result",
         yaxis_title="Actual Result",
         coloraxis_colorbar=dict(title="Count", thickness=15),
+        dragmode=False,  # ஜூம் செய்ய முடியாதபடி முடக்கப்பட்டது
     )
-    st.plotly_chart(fig_cm, use_container_width=True, config={'displayModeBar': False})
+    
+    # config மூலம் ஜூம், பான் (Pan) மற்றும் மெனுக்கள் முழுமையாக மறைக்கப்படுகின்றன
+    st.plotly_chart(
+        fig_cm, 
+        use_container_width=True, 
+        config={'displayModeBar': False, 'staticPlot': True} # staticPlot: True என்பதால் ஜூம் செய்ய முடியாது
+    )
 
     # ==================================================
     # 6. CANDIDATE PREDICTION FORM
