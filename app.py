@@ -87,8 +87,6 @@ uploaded_file = st.sidebar.file_uploader("Upload your custom CSV Dataset", type=
 
 if uploaded_file is not None:
     st.sidebar.warning("Custom file uploaded. Checking format...")
-else:
-    st.sidebar.info("Using default Hugging Face dataset (1,000,000 records).")
 
 try:
     # ==================================================
