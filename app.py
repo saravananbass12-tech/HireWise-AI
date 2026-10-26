@@ -313,11 +313,13 @@ try:
         
     with st.expander("ℹ️ About HireWise AI"):
         st.write("""
-        **Project Name:** HireWise AI
+        **Project Name: HireWise AI**
+        
         **Algorithm:** Random Forest Classification
+        
         **Note:** Model is trained on a 70,000 sample subset for performance optimization.
-        **Author:** SARAVANAN.D
-        """)
+        
+        **Author: SARAVANAN.D**""")
 
 except Exception as e:
     st.error("An error occurred while running the app. Please check the details below:")
