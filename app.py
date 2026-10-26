@@ -22,7 +22,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# மொபைலில் வடிவமைப்பை அழகாக்க தனிப்பட்ட CSS
 st.markdown("""
 <style>
     div[data-testid="stMetric"] {
@@ -55,20 +54,45 @@ st.write(
 )
 st.divider()
 
-try:
-    # ==================================================
-    # 0. DATASET UPLOAD SECTION
-    # ==================================================
-    st.sidebar.header("📁 Data Source")
-    uploaded_file = st.sidebar.file_uploader("Upload a custom CSV Dataset (Optional)", type=["csv"])
-    
-    if uploaded_file is not None:
-        st.sidebar.success("Custom dataset uploaded successfully!")
-        data_source_msg = "Using uploaded custom dataset."
-    else:
-        st.sidebar.info("Using default Hugging Face dataset (1,000,000 records).")
-        data_source_msg = "Using default Hugging Face dataset."
+# ==================================================
+# 0. DATASET UPLOAD & TEMPLATE SECTION
+# ==================================================
+st.sidebar.header("📁 Data Source")
 
+# தேவையான டேட்டாசெட் பார்மெட் (Template)
+sample_data = {
+    "Education": ["BTech", "MCA", "BSc"],
+    "Experience_Years": [2, 1, 0],
+    "Skills_Score": [85, 70, 60],
+    "Applications_Sent": [20, 15, 10],
+    "Coding_Score": [90, 65, 50],
+    "Communication_Score": [80, 75, 70],
+    "Interview_Attended": [2, 1, 0],
+    "Job_Search_Status": ["Good Response", "No Response", "Some Response"],
+    "Interview_Result": ["Selected", "Rejected", "Pending"],
+    "Application_Status": ["Approved", "Rejected", "Pending"]
+}
+template_df = pd.DataFrame(sample_data)
+csv_template = template_df.to_csv(index=False).encode('utf-8')
+
+st.sidebar.download_button(
+    label="📥 Download Dataset Format (CSV)",
+    data=csv_template,
+    file_name='hirewise_dataset_format.csv',
+    mime='text/csv',
+)
+st.sidebar.markdown("---")
+
+uploaded_file = st.sidebar.file_uploader("Upload your custom CSV Dataset", type=["csv"])
+
+if uploaded_file is not None:
+    st.sidebar.success("Custom dataset uploaded successfully!")
+    data_source_msg = "Using uploaded custom dataset."
+else:
+    st.sidebar.info("Using default Hugging Face dataset (1,000,000 records).")
+    data_source_msg = "Using default Hugging Face dataset."
+
+try:
     # ==================================================
     # 1. LOAD DATASET
     # ==================================================
@@ -76,7 +100,6 @@ try:
 
     @st.cache_data
     def load_data(url, uploaded_file):
-        # அப்லோட் செய்யப்பட்ட பைல் இருந்தால் அதைப் படிக்கவும், இல்லையென்றால் URL-ஐப் படிக்கவும்
         if uploaded_file is not None:
             data = pd.read_csv(uploaded_file)
         else:
@@ -128,8 +151,8 @@ try:
         if missing_columns:
             available_columns = ", ".join(map(str, data.columns.tolist()))
             raise ValueError(
-                "Some required columns could not be matched: " + ", ".join(missing_columns)
-                + ". Available CSV columns are: " + available_columns
+                f"Invalid Dataset Format! Missing columns: {', '.join(missing_columns)}. "
+                f"Please download the format from the sidebar and ensure your CSV has the correct columns."
             )
 
         data["Application_Status"] = (
@@ -188,7 +211,7 @@ try:
     ]
 
     # ==================================================
-    # 3. TRAIN RANDOM FOREST MODELS (Using Full Data safely)
+    # 3. TRAIN RANDOM FOREST MODELS
     # ==================================================
     @st.cache_resource
     def train_models(data, data_source_key):
@@ -207,7 +230,7 @@ try:
 
             class_counts = model_data[target].value_counts()
             if class_counts.min() < 2:
-                raise ValueError(f"Every class in {target} needs at least two records.")
+                raise ValueError(f"Every class in {target} needs at least two records for stratified splitting.")
 
             X = model_data[feature_columns]
             y = model_data[target].astype(str)
@@ -235,7 +258,7 @@ try:
                         random_state=42, 
                         class_weight="balanced", 
                         n_jobs=-1,
-                        max_samples=0.1  # மெமரி க்ராஷ் ஆகாமல் இருக்க
+                        max_samples=0.1 
                     )),
                 ]
             )
@@ -254,7 +277,6 @@ try:
 
         return models, metrics
 
-    # கேஷ் (Cache) சரியாக வேலை செய்ய, புதிய டேட்டாசெட் பெயரை Key ஆகப் பயன்படுத்துகிறோம்
     data_source_key = uploaded_file.name if uploaded_file else "default"
     
     with st.spinner("Training Random Forest models... Please wait (This may take a minute)."):
