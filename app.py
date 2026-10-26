@@ -317,7 +317,7 @@ try:
         
         **Algorithm:** Random Forest Classification
         
-        **NOTE:** Model is trained on a 70,000 sample subset for performance optimization.
+        **Note  :** Model is trained on a 70,000 sample subset for performance optimization.
         
         **Author: SARAVANAN.D**""")
 
