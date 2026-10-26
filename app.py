@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import traceback
+import io
 
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
@@ -56,13 +57,30 @@ st.divider()
 
 try:
     # ==================================================
-    # 1. LOAD DATASET FROM HUGGING FACE
+    # 0. DATASET UPLOAD SECTION
+    # ==================================================
+    st.sidebar.header("📁 Data Source")
+    uploaded_file = st.sidebar.file_uploader("Upload a custom CSV Dataset (Optional)", type=["csv"])
+    
+    if uploaded_file is not None:
+        st.sidebar.success("Custom dataset uploaded successfully!")
+        data_source_msg = "Using uploaded custom dataset."
+    else:
+        st.sidebar.info("Using default Hugging Face dataset (1,000,000 records).")
+        data_source_msg = "Using default Hugging Face dataset."
+
+    # ==================================================
+    # 1. LOAD DATASET
     # ==================================================
     HF_CSV_URL = "https://huggingface.co/datasets/saroa/hirewise-dataset/resolve/main/human_job_prediction_50000_records_converted.csv"
 
     @st.cache_data
-    def load_data(url):
-        data = pd.read_csv(url)
+    def load_data(url, uploaded_file):
+        # அப்லோட் செய்யப்பட்ட பைல் இருந்தால் அதைப் படிக்கவும், இல்லையென்றால் URL-ஐப் படிக்கவும்
+        if uploaded_file is not None:
+            data = pd.read_csv(uploaded_file)
+        else:
+            data = pd.read_csv(url)
 
         data.columns = data.columns.astype(str).str.strip()
         normalized = {
@@ -136,14 +154,14 @@ try:
         data["Education"] = data["Education"].replace(["", "nan", "None", "<NA>"], pd.NA)
         return data
 
-    with st.spinner("Hugging Face-ல் இருந்து Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
-        df = load_data(HF_CSV_URL)
+    with st.spinner("Dataset Load ஆகிறது... தயவுசெய்து காத்திருங்கள்."):
+        df = load_data(HF_CSV_URL, uploaded_file)
 
     if df.empty:
-        st.error("The dataset is empty. Please check the CSV file.")
+        st.error("The dataset is empty. Please check the file.")
         st.stop()
 
-    st.success(f"Dataset loaded successfully: {len(df):,} records")
+    st.success(f"Dataset loaded successfully: {len(df):,} records ({data_source_msg})")
 
     # ==================================================
     # 2. INPUT AND OUTPUT COLUMNS
@@ -173,12 +191,11 @@ try:
     # 3. TRAIN RANDOM FOREST MODELS (Using Full Data safely)
     # ==================================================
     @st.cache_resource
-    def train_models(data):
+    def train_models(data, data_source_key):
         models = {}
         metrics = {}
 
         for target in target_columns:
-            # Dataset-ல் உள்ள முழு வரிகளையும் (100%) எடுக்கிறோம்
             model_data = data[feature_columns + [target]].dropna(subset=[target]).copy()
             model_data = model_data[model_data[target].astype("string").str.strip().ne("")]
 
@@ -195,7 +212,6 @@ try:
             X = model_data[feature_columns]
             y = model_data[target].astype(str)
 
-            # 80% Training, 20% Testing
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=0.20, random_state=42, stratify=y,
             )
@@ -219,7 +235,7 @@ try:
                         random_state=42, 
                         class_weight="balanced", 
                         n_jobs=-1,
-                        max_samples=0.1  # ⚠️ மெமரி க்ராஷ் ஆகாமல் இருக்க, ஒவ்வொரு மரமும் 10% தரவை மட்டும் எடுக்கும்
+                        max_samples=0.1  # மெமரி க்ராஷ் ஆகாமல் இருக்க
                     )),
                 ]
             )
@@ -238,8 +254,11 @@ try:
 
         return models, metrics
 
+    # கேஷ் (Cache) சரியாக வேலை செய்ய, புதிய டேட்டாசெட் பெயரை Key ஆகப் பயன்படுத்துகிறோம்
+    data_source_key = uploaded_file.name if uploaded_file else "default"
+    
     with st.spinner("Training Random Forest models... Please wait (This may take a minute)."):
-        models, model_metrics = train_models(df)
+        models, model_metrics = train_models(df, data_source_key)
 
     # ==================================================
     # 4. MODEL ACCURACY DASHBOARD
@@ -356,13 +375,14 @@ try:
         
     with st.expander("ℹ️ About HireWise AI"):
         st.write("""
-        **Project Name : HireWise AI**
+        **Project Name:** HireWise AI
         
         **Algorithm:** Random Forest Classification
         
         **Note:** Model is trained on the full dataset records using an optimized algorithm to prevent memory crashes.
         
-        **Author:SARAVANAN.D**""")
+        **Author:** SARAVANAN.D
+        """)
 
 except Exception as e:
     st.error("An error occurred while running the app. Please check the details below:")
