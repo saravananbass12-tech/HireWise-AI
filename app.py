@@ -21,32 +21,27 @@ st.set_page_config(
     layout="wide"
 )
 
-# உங்கள் முதல் படத்தில் உள்ள அழகான வண்ண வடிவமைப்பு (Custom CSS)
+# மொபைல் மற்றும் லேப்டாப் இரண்டிற்கும் ஏற்ற வகையில் CSS
 st.markdown("""
 <style>
     /* மெட்ரிக் கார்டுகள் */
     div[data-testid="stMetric"] {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
         padding: 15px;
-        border-radius: 15px;
+        border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         text-align: center;
-        border: 1px solid #e0e0e0;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 1.6rem !important;
-        font-weight: bold;
+        font-size: 1.5rem !important;
+        color: #4a148c;
     }
     div[data-testid="stMetricLabel"] {
         font-size: 0.9rem !important;
-        font-weight: 600;
+        font-weight: bold;
+        color: #333333;
     }
-    
-    /* நான்கு வெவ்வேறு வண்ணங்கள் */
-    .metric-blue { background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #0d47a1; }
-    .metric-purple { background: linear-gradient(135deg, #f3e5f5, #e1bee7); color: #4a148c; }
-    .metric-green { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); color: #1b5e20; }
-    .metric-orange { background: linear-gradient(135deg, #fff3e0, #ffe0b2); color: #e65100; }
-
     /* தலைப்பு பேனர் */
     .header-banner {
         background: linear-gradient(90deg, #4a148c 0%, #7b1fa2 100%);
@@ -255,42 +250,18 @@ try:
         models, model_metrics = train_models(df)
 
     # ==================================================
-    # 4. MODEL ACCURACY DASHBOARD (Colorful & Responsive)
+    # 4. MODEL ACCURACY DASHBOARD (2x2 Grid)
     # ==================================================
     st.header("📊 Model Accuracy Dashboard")
 
-    # மொபைலில் 2x2 ஆகக் காட்ட st.columns(2) பயன்படுத்தப்படுகிறது
+    # 2x2 கட்டங்களாகக் காட்ட st.columns(2) பயன்படுத்தப்படுகிறது
     col1, col2 = st.columns(2)
-    
     with col1:
-        st.markdown(f'''
-            <div class="metric-purple" style="padding:20px; border-radius:15px; margin-bottom:15px; text-align:center;">
-                <div style="font-size:1rem; font-weight:bold;">Total Records</div>
-                <div style="font-size:2rem; font-weight:bold;">{len(df):,}</div>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-        st.markdown(f'''
-            <div class="metric-green" style="padding:20px; border-radius:15px; margin-bottom:15px; text-align:center;">
-                <div style="font-size:1rem; font-weight:bold;">Interview Accuracy</div>
-                <div style="font-size:2rem; font-weight:bold;">{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%</div>
-            </div>
-        ''', unsafe_allow_html=True)
-
+        st.metric("Total Records", f"{len(df):,}")
+        st.metric("Interview Accuracy", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
     with col2:
-        st.markdown(f'''
-            <div class="metric-blue" style="padding:20px; border-radius:15px; margin-bottom:15px; text-align:center;">
-                <div style="font-size:1rem; font-weight:bold;">Job Search Accuracy</div>
-                <div style="font-size:2rem; font-weight:bold;">{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%</div>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-        st.markdown(f'''
-            <div class="metric-orange" style="padding:20px; border-radius:15px; margin-bottom:15px; text-align:center;">
-                <div style="font-size:1rem; font-weight:bold;">Application Accuracy</div>
-                <div style="font-size:2rem; font-weight:bold;">{model_metrics['Application_Status']['accuracy'] * 100:.2f}%</div>
-            </div>
-        ''', unsafe_allow_html=True)
+        st.metric("Job Search Accuracy", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
+        st.metric("Application Accuracy", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
 
     st.divider()
 
