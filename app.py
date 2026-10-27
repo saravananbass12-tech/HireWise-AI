@@ -22,8 +22,10 @@ st.set_page_config(
     layout="wide"
 )
 
+# மொபைலில் வடிவமைப்பை அழகாக்க தனிப்பட்ட CSS (உங்கள் படத்தில் உள்ள நிறங்கள்)
 st.markdown("""
 <style>
+    /* மெட்ரிக் கார்டுகள் */
     div[data-testid="stMetric"] {
         background-color: #f8f9fa;
         border: 1px solid #e9ecef;
@@ -34,32 +36,45 @@ st.markdown("""
     }
     div[data-testid="stMetricValue"] {
         font-size: 1.4rem !important;
-        color: #1f77b4;
+        color: #5a189a; /* ஊதா நிறம் */
     }
     div[data-testid="stMetricLabel"] {
         font-size: 0.85rem !important;
         font-weight: bold;
     }
+    /* Prediction Results-ல் உள்ள Success பாக்ஸ் */
     div[data-testid="stNotification"] {
         border-radius: 10px;
+    }
+    /* பிரதான தலைப்பு பேனர் */
+    .header-banner {
+        background: linear-gradient(90deg, #4a148c 0%, #7b1fa2 100%);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .header-banner h1 {
+        color: white !important;
+        margin-bottom: 0;
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("💼 HireWise AI")
-st.subheader("Human Job Search and Recruitment Outcome Prediction")
-st.write(
-    "Predict job search responses, interview results, "
-    "and application status using Random Forest Classification."
-)
-st.divider()
+# அழகான Header
+st.markdown("""
+<div class="header-banner">
+    <h1>💼 HireWise AI</h1>
+    <p style="margin-top: 5px; font-size: 1.1rem;">Human Job Search and Recruitment Outcome Prediction</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ==================================================
 # 0. DATASET UPLOAD SECTION (Sidebar)
 # ==================================================
 st.sidebar.header("📁 Data Source")
 
-# தேவையான டேட்டாசெட் பார்மெட் (Template) டவுன்லோட் செய்ய
 sample_data = {
     "Education": ["BTech", "MCA", "BSc"],
     "Experience_Years": [2, 1, 0],
@@ -99,20 +114,16 @@ try:
             "Job_Search_Status", "Interview_Result", "Application_Status"
         ]
         
-        # 1. முதலில் அப்லோட் செய்யப்பட்ட பைலை செக் செய்வோம்
         if uploaded_file is not None:
             try:
                 data = pd.read_csv(uploaded_file)
                 data.columns = data.columns.astype(str).str.strip()
-                
-                # தேவையான காலம்கள் உள்ளதா என்று பார்ப்போம்
                 missing_columns = [col for col in required_columns if col not in data.columns]
                 
                 if missing_columns:
                     st.error(f"⚠️ Invalid Uploaded Dataset! Missing columns: {', '.join(missing_columns)}. Switching to default dataset...")
                 else:
                     st.success("✅ Custom dataset format is correct! Using uploaded data.")
-                    # Clean and process the uploaded data
                     data["Application_Status"] = (
                         data["Application_Status"].astype("string").str.strip().replace({
                             "Selected": "Approved", "selected": "Approved", "Approved": "Approved",
@@ -129,7 +140,6 @@ try:
             except Exception as e:
                 st.error(f"Error reading uploaded file: {e}. Switching to default dataset...")
 
-        # 2. அப்லோட் செய்தது தவறு என்றால், Default HF Dataset-ஐ லோட் செய்வோம்
         data = pd.read_csv(url)
         data.columns = data.columns.astype(str).str.strip()
         normalized = {
@@ -158,7 +168,6 @@ try:
                     break
         if rename_map: data = data.rename(columns=rename_map)
 
-        # Clean default data
         data["Application_Status"] = (
             data["Application_Status"].astype("string").str.strip().replace({
                 "Selected": "Approved", "selected": "Approved", "Approved": "Approved",
@@ -305,7 +314,7 @@ try:
                 st.write("---")
 
     # ==================================================
-    # 8. DATASET PREVIEW & INFO
+    # 8. DATASET PREVIEW & INFO (நீங்கள் கேட்ட புதிய பகுதிகள்)
     # ==================================================
     st.divider()
     with st.expander("📁 View Dataset (Top 20 Rows)"):
@@ -313,13 +322,18 @@ try:
         
     with st.expander("ℹ️ About HireWise AI"):
         st.write("""
-        **Project Name : HireWise AI**
+        **Project Name:** HireWise AI
         
-        **Algorithm :** Random Forest Classification
+        **Algorithm:** Random Forest Classification
         
-        **Note  :** Model is trained on a 70,000 sample subset for performance optimization.
+        **Note:** Model is trained on a 70,000 sample subset for performance optimization.
         
-        **Author : SARAVANAN.D**""")
+        **Author:** SARAVANAN.D
+        """)
+        
+    # Footer
+    st.markdown("---")
+    st.markdown("<div style='text-align: center; color: gray;'>🛡️ HireWise AI © 2025 | Built with Streamlit & Random Forest</div>", unsafe_allow_html=True)
 
 except Exception as e:
     st.error("An error occurred while running the app. Please check the details below:")
