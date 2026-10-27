@@ -22,7 +22,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# மொபைலில் வடிவமைப்பை அழகாக்க தனிப்பட்ட CSS (உங்கள் படத்தில் உள்ள நிறங்கள்)
+# மொபைலில் வடிவமைப்பை அழகாக்க தனிப்பட்ட CSS
 st.markdown("""
 <style>
     /* மெட்ரிக் கார்டுகள் */
@@ -33,16 +33,17 @@ st.markdown("""
         border-radius: 10px;
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 10px;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 1.4rem !important;
-        color: #5a189a; /* ஊதா நிறம் */
+        font-size: 1.3rem !important;
+        color: #5a189a;
+        white-space: nowrap;
     }
     div[data-testid="stMetricLabel"] {
         font-size: 0.85rem !important;
         font-weight: bold;
     }
-    /* Prediction Results-ல் உள்ள Success பாக்ஸ் */
     div[data-testid="stNotification"] {
         border-radius: 10px;
     }
@@ -54,10 +55,17 @@ st.markdown("""
         color: white;
         text-align: center;
         margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .header-banner h1 {
         color: white !important;
         margin-bottom: 0;
+        font-size: 2rem;
+    }
+    .header-banner p {
+        margin-top: 5px; 
+        font-size: 1rem;
+        color: #f8f9fa;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -66,7 +74,7 @@ st.markdown("""
 st.markdown("""
 <div class="header-banner">
     <h1>💼 HireWise AI</h1>
-    <p style="margin-top: 5px; font-size: 1.1rem;">Human Job Search and Recruitment Outcome Prediction</p>
+    <p>Human Job Search and Recruitment Outcome Prediction</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -245,16 +253,18 @@ try:
         models, model_metrics = train_models(df, data_source_key)
 
     # ==================================================
-    # 4. MODEL ACCURACY DASHBOARD
+    # 4. MODEL ACCURACY DASHBOARD (2x2 Grid for Mobile)
     # ==================================================
     st.header("📊 Model Accuracy Dashboard")
+
+    # மொபைலில் 2x2 கட்டங்களாகக் காட்ட இரண்டு columns பயன்படுத்தப்படுகிறது
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Total Records", f"{len(df):,}")
-        st.metric("Interview Accuracy", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
+        st.metric("Interview Acc.", f"{model_metrics['Interview_Result']['accuracy'] * 100:.2f}%")
     with col2:
-        st.metric("Job Search Accuracy", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
-        st.metric("Application Accuracy", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
+        st.metric("Job Search Acc.", f"{model_metrics['Job_Search_Status']['accuracy'] * 100:.2f}%")
+        st.metric("Application Acc.", f"{model_metrics['Application_Status']['accuracy'] * 100:.2f}%")
 
     st.divider()
 
@@ -314,7 +324,7 @@ try:
                 st.write("---")
 
     # ==================================================
-    # 8. DATASET PREVIEW & INFO (நீங்கள் கேட்ட புதிய பகுதிகள்)
+    # 8. DATASET PREVIEW & INFO
     # ==================================================
     st.divider()
     with st.expander("📁 View Dataset (Top 20 Rows)"):
@@ -323,17 +333,14 @@ try:
     with st.expander("ℹ️ About HireWise AI"):
         st.write("""
         **Project Name:** HireWise AI
-        
         **Algorithm:** Random Forest Classification
-        
         **Note:** Model is trained on a 70,000 sample subset for performance optimization.
-        
         **Author:** SARAVANAN.D
         """)
         
-    # Footer
+    # Footer (ஆண்டு 2026 ஆக மாற்றப்பட்டுள்ளது)
     st.markdown("---")
-    st.markdown("<div style='text-align: center; color: gray;'>🛡️ HireWise AI © 2025 | Built with Streamlit & Random Forest</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; color: gray;'>🛡️ HireWise AI © 2026 | Built with Streamlit & Random Forest</div>", unsafe_allow_html=True)
 
 except Exception as e:
     st.error("An error occurred while running the app. Please check the details below:")
